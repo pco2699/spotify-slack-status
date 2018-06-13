@@ -2,6 +2,9 @@
 
 const { getConfig } = require('./src/setup-config');
 const setSlackStatusToCurrentTrack = require('./src/set-status-to-current-track');
+const request = require('request');
+
+const event_url = 'https://maker.ifttt.com/trigger/job_exited/with/key/djDEm9IJKJu1ahBT0c5HBfZdYA47KngtL7JDo3llUoB'
 
 let stopProgram = false;
 let timeoutId = null;
@@ -17,6 +20,11 @@ process.on('SIGINT', () => {
   if (timeoutResolve) {
     timeoutResolve();
   }
+});
+
+process.on('uncaughtException', function (err) {
+    console.error('unhandled exception has occured.');
+    console.error(err);
 });
 
 /**
@@ -37,7 +45,6 @@ function setStatusIfStillRunning(config) {
     timeoutResolve = resolve;
     setSlackStatusToCurrentTrack(config)
       .then(newStatus => {
-        console.log(newStatus);
         if (stopProgram) {
           return;
         }
@@ -56,4 +63,7 @@ getConfig()
   // Set status if still running
   .then(setStatusIfStillRunning)
   // Log error on exception and exit app
-  .catch(error => console.error(error));
+  .catch(error => {
+    console.error(error);
+    }
+  );

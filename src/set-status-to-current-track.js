@@ -6,6 +6,7 @@
 const SpotifyWebApi = require('spotify-web-api-node');
 const request = require('request');
 const { updateSpotifyAccessToken } = require('./setup-config');
+const _ = require('lodash');
 
 
 /**
@@ -80,26 +81,32 @@ function getCurrentSpotifyTrack(spotifyConfig) {
 function setSlackStatusToCurrentTrack(config) {
   return getCurrentSpotifyTrack(config.spotify)
     .then(response => {
-      const name = response.body.item.name;
-      let artists = '';
-      if (response.body.item.artists) {
-        response.body.item.artists.forEach(artist => {
-          if (artists.length) {
-            artists += ', ';
-          }
+      try{
+      	const name = response.body.item.name;
+      	let artists = '';
+      	if (response.body.item.artists) {
+          response.body.item.artists.forEach(artist => {
+            if (artists.length) {
+              artists += ', ';
+            }
 
-          artists += artist.name;
-        });
+            artists += artist.name;
+          });
+        }
+
+        let status;
+        if (artists) {
+          status = `${name} - ${artists}`;
+        } else {
+          status = `${name}`;
+        }
+        if (response.body.is_playing){
+          return setSlackStatus(status, ':spotify:', config.slack.legacyApiToken);
+        }
       }
-
-      let status;
-      if (artists) {
-        status = `${name} - ${artists}`;
-      } else {
-        status = `${name}`;
+      catch (TypeError){
       }
-
-      return setSlackStatus(status, ':spotify:', config.slack.legacyApiToken);
+      return setSlackStatus(config.slack.defaultStatus, config.slack.defaultIcon, config.slack.legacyApiToken);
     });
 }
 
